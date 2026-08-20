@@ -1,0 +1,15 @@
+# Environment variables
+.env
+.env.local
+
+# Python & Virtualenv
+__pycache__/
+*.py[cod]
+venv/
+env/
+
+# Databases
+*.db
+
+# Pytest
+.pytest_cache/
