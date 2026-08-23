@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Card, Row, Col, Button, Tag, Typography, Progress, Badge } from 'antd';
-import { PlusOutlined, ThunderboltOutlined, TeamOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Tag, Typography, Progress } from 'antd';
+import { PlusOutlined, ThunderboltOutlined } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 const jobsList = [
   {

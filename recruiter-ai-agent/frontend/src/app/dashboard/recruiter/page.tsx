@@ -5,13 +5,11 @@ import {
   Card,
   Row,
   Col,
-  Statistic,
   Progress,
   Table,
   Tag,
   Button,
   Avatar,
-  Badge,
   Typography,
   Space,
   Select,
@@ -29,15 +27,12 @@ import {
   CheckCircleFilled,
   SyncOutlined,
   RocketOutlined,
-  SearchOutlined,
   ArrowUpOutlined,
-  FilterOutlined,
-  CalendarOutlined,
   CheckOutlined,
   FieldTimeOutlined,
 } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 interface PipelineCandidate {
   id: string;
@@ -141,7 +136,7 @@ const mockNewCandidatesPool: Omit<PipelineCandidate, 'id' | 'timeInStage'>[] = [
 
 export default function RecruiterDashboard() {
   const [candidatesScreened, setCandidatesScreened] = useState(1284);
-  const [timeToHire, setTimeToHire] = useState(12.4);
+  const [timeToHire] = useState(12.4);
   const [candidates, setCandidates] = useState<PipelineCandidate[]>(initialCandidates);
   const [isLiveUpdating, setIsLiveUpdating] = useState(true);
   const [lastActivity, setLastActivity] = useState('Elena Rostova matched with 98% score');

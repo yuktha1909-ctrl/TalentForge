@@ -9,19 +9,12 @@ import {
   Tag,
   Button,
   Avatar,
-  Progress,
   Typography,
   Space,
-  Badge,
-  Tooltip,
 } from 'antd';
 import {
   CheckCircleOutlined,
-  CloseCircleOutlined,
   StarFilled,
-  FileDoneOutlined,
-  UsergroupAddOutlined,
-  CalendarOutlined,
   ThunderboltFilled,
   TeamOutlined,
 } from '@ant-design/icons';

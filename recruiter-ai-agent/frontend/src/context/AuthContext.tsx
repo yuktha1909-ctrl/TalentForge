@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 
 export type UserRole = 'recruiter' | 'hiring-manager' | 'admin';
@@ -57,26 +57,25 @@ interface AuthContextType {
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
 export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(DEMO_PROFILES.recruiter);
-  const [isHydrated, setIsHydrated] = useState(false);
-  const router = useRouter();
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    if (typeof window !== 'undefined') {
+      try {
+        const storedRole = localStorage.getItem('talent_forge_role') as UserRole | null;
+        const storedAuth = localStorage.getItem('talent_forge_auth');
 
-  useEffect(() => {
-    try {
-      const storedRole = localStorage.getItem('talent_forge_role') as UserRole | null;
-      const storedAuth = localStorage.getItem('talent_forge_auth');
-
-      if (storedAuth === 'true' && storedRole && DEMO_PROFILES[storedRole]) {
-        setUser(DEMO_PROFILES[storedRole]);
-      } else if (storedAuth === 'false') {
-        setUser(null);
+        if (storedAuth === 'true' && storedRole && DEMO_PROFILES[storedRole]) {
+          return DEMO_PROFILES[storedRole];
+        }
+        if (storedAuth === 'false') {
+          return null;
+        }
+      } catch {
+        // localStorage fallback
       }
-    } catch {
-      // localStorage fallback
-    } finally {
-      setIsHydrated(true);
     }
-  }, []);
+    return DEMO_PROFILES.recruiter;
+  });
+  const router = useRouter();
 
   const login = async (
     email?: string,

@@ -7,12 +7,8 @@ import {
   Button,
   Select,
   Checkbox,
-  Card,
   Typography,
   Divider,
-  Tag,
-  Alert,
-  Space,
 } from 'antd';
 import {
   MailOutlined,
@@ -23,8 +19,6 @@ import {
   SafetyCertificateOutlined,
   ThunderboltFilled,
   ArrowRightOutlined,
-  CheckCircleFilled,
-  StarFilled,
 } from '@ant-design/icons';
 import { useAuth, UserRole, DEMO_PROFILES } from '@/context/AuthContext';
 

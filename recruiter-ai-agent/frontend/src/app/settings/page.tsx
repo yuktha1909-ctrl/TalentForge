@@ -1,7 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, Form, Input, Switch, Button, Typography, Select, Divider } from 'antd';
+import { Card, Form, Switch, Button, Typography, Select } from 'antd';
 import { SaveOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;

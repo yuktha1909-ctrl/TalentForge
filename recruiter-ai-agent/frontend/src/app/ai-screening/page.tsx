@@ -1,10 +1,10 @@
 'use client';
 
 import React from 'react';
-import { Card, Row, Col, Button, Tag, Typography, Progress, Alert } from 'antd';
-import { ThunderboltFilled, CheckCircleFilled, RobotOutlined, ArrowRightOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Button, Tag, Typography, Alert } from 'antd';
+import { ThunderboltFilled, RobotOutlined } from '@ant-design/icons';
 
-const { Title, Text, Paragraph } = Typography;
+const { Title, Text } = Typography;
 
 export default function AIScreeningPage() {
   return (

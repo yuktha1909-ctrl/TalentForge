@@ -1,8 +1,8 @@
 'use client';
 
 import React from 'react';
-import { Card, Table, Tag, Button, Typography, Avatar } from 'antd';
-import { CalendarOutlined, VideoCameraOutlined, CheckCircleOutlined } from '@ant-design/icons';
+import { Card, Table, Tag, Button, Typography } from 'antd';
+import { CalendarOutlined, VideoCameraOutlined } from '@ant-design/icons';
 
 const { Title, Text } = Typography;
 

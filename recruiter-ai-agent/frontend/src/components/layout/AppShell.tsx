@@ -10,8 +10,6 @@ import {
   Input,
   Dropdown,
   Tag,
-  Tooltip,
-  Space,
   Typography,
 } from 'antd';
 import type { MenuProps } from 'antd';
@@ -29,14 +27,10 @@ import {
   SearchOutlined,
   PlusOutlined,
   RobotOutlined,
-  UserOutlined,
   LogoutOutlined,
-  QuestionCircleOutlined,
   CheckCircleFilled,
   SafetyCertificateOutlined,
   TeamOutlined,
-  SwapOutlined,
-  AppstoreOutlined,
 } from '@ant-design/icons';
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';

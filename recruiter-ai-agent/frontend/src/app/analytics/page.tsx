@@ -1,8 +1,7 @@
 'use client';
 
 import React from 'react';
-import { Card, Row, Col, Typography, Progress } from 'antd';
-import { RiseOutlined, ClockCircleOutlined, DollarOutlined, SmileOutlined } from '@ant-design/icons';
+import { Card, Row, Col, Typography } from 'antd';
 
 const { Title, Text } = Typography;
 
