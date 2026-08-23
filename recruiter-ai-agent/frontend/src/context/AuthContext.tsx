@@ -1,9 +1,18 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
+import { apiLogin, apiGetMe } from '@/lib/api';
 
 export type UserRole = 'recruiter' | 'hiring-manager' | 'admin';
+
+// Backend uses 'hiring_manager' (underscore); frontend uses 'hiring-manager' (hyphen).
+// This maps between the two representations.
+function normalizeRole(raw: string): UserRole {
+  if (raw === 'hiring_manager') return 'hiring-manager';
+  if (raw === 'admin') return 'admin';
+  return 'recruiter';
+}
 
 export interface UserProfile {
   id: string;
@@ -15,6 +24,9 @@ export interface UserProfile {
   department: string;
 }
 
+// ──────────────────────────────────────────────
+// Demo profiles (used as fallback when backend is unreachable)
+// ──────────────────────────────────────────────
 export const DEMO_PROFILES: Record<UserRole, UserProfile> = {
   recruiter: {
     id: 'usr_recruiter_01',
@@ -49,6 +61,8 @@ interface AuthContextType {
   user: UserProfile | null;
   role: UserRole;
   isAuthenticated: boolean;
+  token: string | null;
+  isDemoMode: boolean;
   login: (email?: string, password?: string, selectedRole?: UserRole) => Promise<boolean>;
   logout: () => void;
   switchRole: (role: UserRole) => void;
@@ -56,72 +70,155 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-  const [user, setUser] = useState<UserProfile | null>(() => {
-    if (typeof window !== 'undefined') {
-      try {
-        const storedRole = localStorage.getItem('talent_forge_role') as UserRole | null;
-        const storedAuth = localStorage.getItem('talent_forge_auth');
+// ──────────────────────────────────────────────
+// Storage helpers
+// ──────────────────────────────────────────────
+const STORAGE_KEYS = {
+  AUTH: 'talent_forge_auth',
+  ROLE: 'talent_forge_role',
+  TOKEN: 'talent_forge_token',
+  DEMO: 'talent_forge_demo',
+};
 
-        if (storedAuth === 'true' && storedRole && DEMO_PROFILES[storedRole]) {
-          return DEMO_PROFILES[storedRole];
-        }
-        if (storedAuth === 'false') {
-          return null;
-        }
-      } catch {
-        // localStorage fallback
-      }
-    }
-    return DEMO_PROFILES.recruiter;
-  });
+function safeGetItem(key: string): string | null {
+  try {
+    return typeof window !== 'undefined' ? localStorage.getItem(key) : null;
+  } catch {
+    return null;
+  }
+}
+
+function safeSetItem(key: string, value: string): void {
+  try {
+    if (typeof window !== 'undefined') localStorage.setItem(key, value);
+  } catch {}
+}
+
+function safeRemoveItem(key: string): void {
+  try {
+    if (typeof window !== 'undefined') localStorage.removeItem(key);
+  } catch {}
+}
+
+// ──────────────────────────────────────────────
+// Provider
+// ──────────────────────────────────────────────
+export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
+  const [user, setUser] = useState<UserProfile | null>(() => {
+    const storedAuth = safeGetItem(STORAGE_KEYS.AUTH);
+    const storedRole = safeGetItem(STORAGE_KEYS.ROLE) as UserRole | null;
+    if (storedAuth === 'true' && storedRole && DEMO_PROFILES[storedRole]) {
+      return DEMO_PROFILES[storedRole];
+    }
+    return null;
+  });
+
+  const [token, setToken] = useState<string | null>(() => safeGetItem(STORAGE_KEYS.TOKEN));
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(
+    () => safeGetItem(STORAGE_KEYS.DEMO) === 'true'
+  );
+
+  // ── Login ──────────────────────────────────────────────────────────────
   const login = async (
     email?: string,
-    _password?: string,
+    password?: string,
     selectedRole: UserRole = 'recruiter'
   ): Promise<boolean> => {
-    const demo = DEMO_PROFILES[selectedRole];
-    const profile: UserProfile = demo
-      ? demo
-      : {
-          id: `usr_${Date.now()}`,
-          name: email?.split('@')[0] || 'Talent User',
-          email: email || `${selectedRole}@talentforge.ai`,
-          role: selectedRole,
-          avatar: 'https://images.unsplash.com/photo-1534528741775-53994a69daeb?w=150&auto=format&fit=crop&q=80',
-          title: `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} Specialist`,
-          department: 'Talent Acquisition',
+    // 1. Attempt real backend authentication
+    if (email && password) {
+      try {
+        const authData = await apiLogin({ email, password });
+        const backendRole = normalizeRole(authData.user.role);
+
+        const profile: UserProfile = {
+          id: String(authData.user.id),
+          name: authData.user.full_name || authData.user.email,
+          email: authData.user.email,
+          role: backendRole,
+          // Use demo avatar as placeholder (backend doesn't store avatars yet)
+          avatar: DEMO_PROFILES[backendRole]?.avatar || DEMO_PROFILES.recruiter.avatar,
+          title: `${authData.user.role.replace('_', ' ')} at TalentForge`,
+          department: 'TalentForge',
         };
 
-    setUser(profile);
-    try {
-      localStorage.setItem('talent_forge_auth', 'true');
-      localStorage.setItem('talent_forge_role', selectedRole);
-    } catch {}
+        setUser(profile);
+        setToken(authData.access_token);
+        setIsDemoMode(false);
 
-    const targetRoute = `/dashboard/${selectedRole}`;
-    router.push(targetRoute);
+        safeSetItem(STORAGE_KEYS.AUTH, 'true');
+        safeSetItem(STORAGE_KEYS.ROLE, backendRole);
+        safeSetItem(STORAGE_KEYS.TOKEN, authData.access_token);
+        safeSetItem(STORAGE_KEYS.DEMO, 'false');
+
+        router.push(`/dashboard/${backendRole}`);
+        return true;
+      } catch (err) {
+        // If backend is unreachable (network error), fall through to demo mode.
+        // If backend returned 401, propagate the error so the login form can show it.
+        if (err instanceof Error) {
+          const isNetworkError =
+            err.message.includes('fetch') ||
+            err.message.includes('Failed to fetch') ||
+            err.message.includes('NetworkError') ||
+            err.message.includes('ECONNREFUSED');
+
+          if (!isNetworkError) {
+            // Auth failure (bad credentials) — re-throw so UI can show the message
+            throw err;
+          }
+          // Network error → fall through to demo mode below
+          console.warn('[AuthContext] Backend unreachable — activating demo mode.');
+        }
+      }
+    }
+
+    // 2. Demo mode fallback (backend offline OR quick-login button pressed)
+    const demo = DEMO_PROFILES[selectedRole];
+    const profile: UserProfile = demo || {
+      id: `usr_${Date.now()}`,
+      name: email?.split('@')[0] || 'Talent User',
+      email: email || `${selectedRole}@talentforge.ai`,
+      role: selectedRole,
+      avatar: DEMO_PROFILES.recruiter.avatar,
+      title: `${selectedRole.charAt(0).toUpperCase() + selectedRole.slice(1)} Specialist`,
+      department: 'Talent Acquisition',
+    };
+
+    setUser(profile);
+    setToken(null);
+    setIsDemoMode(true);
+
+    safeSetItem(STORAGE_KEYS.AUTH, 'true');
+    safeSetItem(STORAGE_KEYS.ROLE, selectedRole);
+    safeRemoveItem(STORAGE_KEYS.TOKEN);
+    safeSetItem(STORAGE_KEYS.DEMO, 'true');
+
+    router.push(`/dashboard/${selectedRole}`);
     return true;
   };
 
+  // ── Logout ─────────────────────────────────────────────────────────────
   const logout = () => {
     setUser(null);
-    try {
-      localStorage.setItem('talent_forge_auth', 'false');
-      localStorage.removeItem('talent_forge_role');
-    } catch {}
+    setToken(null);
+    setIsDemoMode(false);
+    safeSetItem(STORAGE_KEYS.AUTH, 'false');
+    safeRemoveItem(STORAGE_KEYS.ROLE);
+    safeRemoveItem(STORAGE_KEYS.TOKEN);
+    safeRemoveItem(STORAGE_KEYS.DEMO);
     router.push('/login');
   };
 
+  // ── Switch Role (demo convenience) ────────────────────────────────────
   const switchRole = (newRole: UserRole) => {
     if (DEMO_PROFILES[newRole]) {
       setUser(DEMO_PROFILES[newRole]);
-      try {
-        localStorage.setItem('talent_forge_auth', 'true');
-        localStorage.setItem('talent_forge_role', newRole);
-      } catch {}
+      setIsDemoMode(true);
+      safeSetItem(STORAGE_KEYS.AUTH, 'true');
+      safeSetItem(STORAGE_KEYS.ROLE, newRole);
+      safeSetItem(STORAGE_KEYS.DEMO, 'true');
       router.push(`/dashboard/${newRole}`);
     }
   };
@@ -132,6 +229,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         user,
         role: user?.role || 'recruiter',
         isAuthenticated: !!user,
+        token,
+        isDemoMode,
         login,
         logout,
         switchRole,

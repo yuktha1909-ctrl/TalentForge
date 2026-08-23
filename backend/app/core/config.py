@@ -9,8 +9,8 @@ class Settings(BaseSettings):
     VERSION: str = "1.0.0"
     API_V1_STR: str = "/api/v1"
 
-    # Database
-    DATABASE_URL: str = "sqlite:///./recruiter_ai.db"
+    # Database (PostgreSQL primary, SQLite fallback handled in database.py)
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/recruiter_ai"
 
     # Redis
     REDIS_URL: str = "redis://localhost:6379/0"

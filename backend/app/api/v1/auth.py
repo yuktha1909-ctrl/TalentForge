@@ -3,7 +3,7 @@ from fastapi.security import OAuth2PasswordRequestForm
 from sqlalchemy.orm import Session
 from app.core.database import get_db
 from app.core.security import get_password_hash, verify_password, create_access_token
-from app.models.user import User
+from app.models.user import User, UserRole
 from app.schemas.user import UserCreate, UserResponse, Token, LoginRequest
 from app.api.deps import get_current_user
 
@@ -24,7 +24,7 @@ def signup(user_in: UserCreate, db: Session = Depends(get_db)):
         email=user_in.email,
         full_name=user_in.full_name,
         hashed_password=get_password_hash(user_in.password),
-        role=user_in.role or "recruiter"
+        role=user_in.role or UserRole.RECRUITER
     )
     db.add(db_user)
     db.commit()

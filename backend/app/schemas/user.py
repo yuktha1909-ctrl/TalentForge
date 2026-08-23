@@ -1,12 +1,13 @@
 from datetime import datetime
 from typing import Optional
 from pydantic import BaseModel, EmailStr, ConfigDict
+from app.models.user import UserRole
 
 
 class UserBase(BaseModel):
     email: EmailStr
     full_name: str
-    role: Optional[str] = "recruiter"
+    role: Optional[UserRole] = UserRole.RECRUITER
 
 
 class UserCreate(UserBase):

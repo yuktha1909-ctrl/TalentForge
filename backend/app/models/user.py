@@ -1,7 +1,15 @@
+import enum
 from datetime import datetime, timezone
-from sqlalchemy import Column, Integer, String, Boolean, DateTime
+from sqlalchemy import Column, Integer, String, Boolean, DateTime, Enum as SQLEnum
 from sqlalchemy.orm import relationship
 from app.core.database import Base
+
+
+class UserRole(str, enum.Enum):
+    """Enumerated user roles for role-based access control (RBAC)."""
+    RECRUITER = "recruiter"
+    HIRING_MANAGER = "hiring_manager"
+    ADMIN = "admin"
 
 
 class User(Base):
@@ -11,7 +19,7 @@ class User(Base):
     email = Column(String, unique=True, index=True, nullable=False)
     full_name = Column(String, nullable=False)
     hashed_password = Column(String, nullable=False)
-    role = Column(String, default="recruiter", nullable=False)
+    role = Column(SQLEnum(UserRole), default=UserRole.RECRUITER, nullable=False)
     is_active = Column(Boolean, default=True, nullable=False)
     created_at = Column(DateTime, default=lambda: datetime.now(timezone.utc), nullable=False)
 
