@@ -1,16 +1,6 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # TalentForge CI/CD Pipeline
 # ─────────────────────────────────────────────────────────────────────────────
-# Runs on every push to main and on all pull requests.
-#
-# Jobs:
-#   1. backend-tests    — Python pytest suite (recruiter-backend/)
-#   2. frontend-checks  — Next.js lint + build (recruiter-ai-agent/frontend/)
-#
-# Deployment (manual step — configure secrets in repo Settings → Secrets):
-#   Backend  → Railway  (set RAILWAY_TOKEN secret)
-#   Frontend → Vercel   (set VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID secrets)
-# ─────────────────────────────────────────────────────────────────────────────
 
 name: CI
 
@@ -37,13 +27,12 @@ jobs:
         working-directory: recruiter-backend
 
     env:
-      # Use SQLite in CI — conftest.py overrides get_db to SQLite anyway,
-      # but this prevents the startup fallback log from polluting test output.
       DATABASE_URL: "sqlite:///./ci_test.db"
       REDIS_URL: "redis://localhost:6379/0"
       SECRET_KEY: "ci-test-secret-key-do-not-use-in-production"
       ALGORITHM: "HS256"
       OPENAI_API_KEY: ""
+      PYTHONPATH: "."
 
     steps:
       - name: Checkout repository
@@ -65,9 +54,6 @@ jobs:
             --tb=short \
             --ignore=tests/test_screening_graph.py \
             -x
-        # test_screening_graph.py is excluded in CI because it requires
-        # a live OpenAI API key. It falls back gracefully but may produce
-        # noisy output. Enable it by removing --ignore when OPENAI_API_KEY is set.
 
   # ─────────────────────────────────────────────────────────────────────────────
   # Job 2: Frontend Lint + Build
@@ -81,8 +67,6 @@ jobs:
         working-directory: recruiter-ai-agent/frontend
 
     env:
-      # Provide a placeholder so NEXT_PUBLIC_API_URL is defined during build.
-      # Vercel will inject the real value via its environment variable settings.
       NEXT_PUBLIC_API_URL: "http://localhost:8000"
 
     steps:
@@ -104,40 +88,3 @@ jobs:
 
       - name: Build Next.js production bundle
         run: npm run build
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Job 3 (Optional): Deploy backend to Railway
-  # Uncomment and set RAILWAY_TOKEN secret to enable.
-  # ─────────────────────────────────────────────────────────────────────────────
-  # deploy-backend:
-  #   name: Deploy — Railway (backend)
-  #   needs: [backend-tests]
-  #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Deploy to Railway
-  #       uses: bervProject/railway-deploy@v1.0.0
-  #       with:
-  #         railway_token: ${{ secrets.RAILWAY_TOKEN }}
-  #         service: recruiter-backend
-
-  # ─────────────────────────────────────────────────────────────────────────────
-  # Job 4 (Optional): Deploy frontend to Vercel
-  # Uncomment and set VERCEL_TOKEN, VERCEL_ORG_ID, VERCEL_PROJECT_ID secrets.
-  # ─────────────────────────────────────────────────────────────────────────────
-  # deploy-frontend:
-  #   name: Deploy — Vercel (frontend)
-  #   needs: [frontend-checks]
-  #   runs-on: ubuntu-latest
-  #   if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-  #   steps:
-  #     - uses: actions/checkout@v4
-  #     - name: Deploy to Vercel
-  #       uses: amondnet/vercel-action@v25
-  #       with:
-  #         vercel-token: ${{ secrets.VERCEL_TOKEN }}
-  #         vercel-org-id: ${{ secrets.VERCEL_ORG_ID }}
-  #         vercel-project-id: ${{ secrets.VERCEL_PROJECT_ID }}
-  #         working-directory: recruiter-ai-agent/frontend
-  #         vercel-args: "--prod"
