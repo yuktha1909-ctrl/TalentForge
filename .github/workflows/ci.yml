@@ -32,7 +32,7 @@ jobs:
       SECRET_KEY: "ci-test-secret-key-do-not-use-in-production"
       ALGORITHM: "HS256"
       OPENAI_API_KEY: ""
-      PYTHONPATH: "."
+      PYTHONPATH: "${{ github.workspace }}/recruiter-backend"
 
     steps:
       - name: Checkout repository
