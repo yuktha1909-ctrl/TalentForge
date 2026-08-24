@@ -161,10 +161,11 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('recruiter')}
-                className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${selectedRole === 'recruiter'
-                  ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-sm'
-                  : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
-                  }`}
+                className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${
+                  selectedRole === 'recruiter'
+                    ? 'bg-indigo-600/20 border-indigo-500 text-white shadow-sm'
+                    : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
+                }`}
               >
                 <div className="flex items-center gap-1.5 text-indigo-400 text-xs font-bold mb-0.5">
                   <UsergroupAddOutlined /> Recruiter
@@ -175,10 +176,11 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('hiring-manager')}
-                className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${selectedRole === 'hiring-manager'
-                  ? 'bg-purple-600/20 border-purple-500 text-white shadow-sm'
-                  : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
-                  }`}
+                className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${
+                  selectedRole === 'hiring-manager'
+                    ? 'bg-purple-600/20 border-purple-500 text-white shadow-sm'
+                    : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
+                }`}
               >
                 <div className="flex items-center gap-1.5 text-purple-400 text-xs font-bold mb-0.5">
                   <TeamOutlined /> Hiring Lead
@@ -189,10 +191,11 @@ export default function LoginPage() {
               <button
                 type="button"
                 onClick={() => handleQuickLogin('admin')}
-                className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${selectedRole === 'admin'
-                  ? 'bg-cyan-600/20 border-cyan-500 text-white shadow-sm'
-                  : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
-                  }`}
+                className={`p-2.5 rounded-xl border text-left transition flex flex-col items-start ${
+                  selectedRole === 'admin'
+                    ? 'bg-cyan-600/20 border-cyan-500 text-white shadow-sm'
+                    : 'bg-slate-800/60 border-slate-700/80 text-slate-300 hover:border-slate-600'
+                }`}
               >
                 <div className="flex items-center gap-1.5 text-cyan-400 text-xs font-bold mb-0.5">
                   <SafetyCertificateOutlined /> Admin
@@ -237,7 +240,6 @@ export default function LoginPage() {
                     },
                   },
                 }}
-
               >
                 <Option value="recruiter">
                   <div className="flex items-center gap-2 py-1">
