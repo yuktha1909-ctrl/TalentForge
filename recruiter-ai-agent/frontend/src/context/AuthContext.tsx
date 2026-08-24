@@ -1,15 +1,13 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
-import { apiLogin, apiGetMe } from '@/lib/api';
+import { apiLogin } from '@/lib/api';
 
 export type UserRole = 'recruiter' | 'hiring-manager' | 'admin';
 
-// Backend uses 'hiring_manager' (underscore); frontend uses 'hiring-manager' (hyphen).
-// This maps between the two representations.
 function normalizeRole(raw: string): UserRole {
-  if (raw === 'hiring_manager') return 'hiring-manager';
+  if (raw === 'hiring_manager' || raw === 'hiring-manager') return 'hiring-manager';
   if (raw === 'admin') return 'admin';
   return 'recruiter';
 }
@@ -24,9 +22,6 @@ export interface UserProfile {
   department: string;
 }
 
-// ──────────────────────────────────────────────
-// Demo profiles (used as fallback when backend is unreachable)
-// ──────────────────────────────────────────────
 export const DEMO_PROFILES: Record<UserRole, UserProfile> = {
   recruiter: {
     id: 'usr_recruiter_01',
@@ -70,9 +65,6 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-// ──────────────────────────────────────────────
-// Storage helpers
-// ──────────────────────────────────────────────
 const STORAGE_KEYS = {
   AUTH: 'talent_forge_auth',
   ROLE: 'talent_forge_role',
@@ -100,9 +92,6 @@ function safeRemoveItem(key: string): void {
   } catch {}
 }
 
-// ──────────────────────────────────────────────
-// Provider
-// ──────────────────────────────────────────────
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
@@ -120,13 +109,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     () => safeGetItem(STORAGE_KEYS.DEMO) === 'true'
   );
 
-  // ── Login ──────────────────────────────────────────────────────────────
   const login = async (
     email?: string,
     password?: string,
     selectedRole: UserRole = 'recruiter'
   ): Promise<boolean> => {
-    // 1. Attempt real backend authentication
     if (email && password) {
       try {
         const authData = await apiLogin({ email, password });
@@ -137,7 +124,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
           name: authData.user.full_name || authData.user.email,
           email: authData.user.email,
           role: backendRole,
-          // Use demo avatar as placeholder (backend doesn't store avatars yet)
           avatar: DEMO_PROFILES[backendRole]?.avatar || DEMO_PROFILES.recruiter.avatar,
           title: `${authData.user.role.replace('_', ' ')} at TalentForge`,
           department: 'TalentForge',
@@ -155,8 +141,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         router.push(`/dashboard/${backendRole}`);
         return true;
       } catch (err) {
-        // If backend is unreachable (network error), fall through to demo mode.
-        // If backend returned 401, propagate the error so the login form can show it.
         if (err instanceof Error) {
           const isNetworkError =
             err.message.includes('fetch') ||
@@ -165,16 +149,13 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
             err.message.includes('ECONNREFUSED');
 
           if (!isNetworkError) {
-            // Auth failure (bad credentials) — re-throw so UI can show the message
             throw err;
           }
-          // Network error → fall through to demo mode below
           console.warn('[AuthContext] Backend unreachable — activating demo mode.');
         }
       }
     }
 
-    // 2. Demo mode fallback (backend offline OR quick-login button pressed)
     const demo = DEMO_PROFILES[selectedRole];
     const profile: UserProfile = demo || {
       id: `usr_${Date.now()}`,
@@ -199,7 +180,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     return true;
   };
 
-  // ── Logout ─────────────────────────────────────────────────────────────
   const logout = () => {
     setUser(null);
     setToken(null);
@@ -211,7 +191,6 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     router.push('/login');
   };
 
-  // ── Switch Role (demo convenience) ────────────────────────────────────
   const switchRole = (newRole: UserRole) => {
     if (DEMO_PROFILES[newRole]) {
       setUser(DEMO_PROFILES[newRole]);
