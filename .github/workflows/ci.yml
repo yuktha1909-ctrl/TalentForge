@@ -22,7 +22,7 @@ on:
 
 env:
   PYTHON_VERSION: "3.11"
-  NODE_VERSION: "20"
+  NODE_VERSION: "24"
 
 # ─────────────────────────────────────────────────────────────────────────────
 # Job 1: Backend Tests
@@ -69,9 +69,9 @@ jobs:
         # a live OpenAI API key. It falls back gracefully but may produce
         # noisy output. Enable it by removing --ignore when OPENAI_API_KEY is set.
 
-  # ─────────────────────────────────────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────────
   # Job 2: Frontend Lint + Build
-  # ─────────────────────────────────────────────────────────────────────────────
+  # ─────────────────────────────────────────────────────────────────────────
   frontend-checks:
     name: Frontend — lint + build (Next.js)
     runs-on: ubuntu-latest
