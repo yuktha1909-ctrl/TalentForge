@@ -1,6 +1,12 @@
 # ─────────────────────────────────────────────────────────────────────────────
 # TalentForge CI/CD Pipeline
 # ─────────────────────────────────────────────────────────────────────────────
+# Runs on every push to main and on all pull requests.
+#
+# Jobs:
+#   1. backend-tests    — Python pytest suite
+#   2. frontend-checks  — Next.js lint + build
+# ─────────────────────────────────────────────────────────────────────────────
 
 name: CI
 
@@ -32,7 +38,6 @@ jobs:
       SECRET_KEY: "ci-test-secret-key-do-not-use-in-production"
       ALGORITHM: "HS256"
       OPENAI_API_KEY: ""
-      PYTHONPATH: "${{ github.workspace }}/recruiter-backend"
 
     steps:
       - name: Checkout repository
@@ -47,6 +52,23 @@ jobs:
 
       - name: Install Python dependencies
         run: pip install -r requirements.txt
+
+      - name: Set Python path
+        run: echo "PYTHONPATH=$PWD" >> "$GITHUB_ENV"
+
+      - name: Verify backend structure
+        run: |
+          echo "Current directory:"
+          pwd
+          echo ""
+          echo "Backend files:"
+          ls -la
+          echo ""
+          echo "App directory:"
+          ls -la app
+          echo ""
+          echo "Python path:"
+          echo "$PYTHONPATH"
 
       - name: Run pytest
         run: |
@@ -83,7 +105,7 @@ jobs:
       - name: Install npm dependencies
         run: npm ci
 
-      - name: Run ESLint (next lint)
+      - name: Run ESLint
         run: npm run lint
 
       - name: Build Next.js production bundle
