@@ -1,6 +1,13 @@
 import logging
 from typing import TypedDict, Optional
-from langgraph.graph import StateGraph, END
+# LangGraph START sentinel — import path changed across versions; handle both.
+try:
+    from langgraph.graph import StateGraph, END, START
+    _has_start_const = True
+except ImportError:
+    from langgraph.graph import StateGraph, END
+    START = "__start__"
+    _has_start_const = False
 from langchain_openai import ChatOpenAI
 from langchain_core.messages import SystemMessage, HumanMessage
 from app.core.config import settings
@@ -72,8 +79,11 @@ builder = StateGraph(ScreeningState)
 # add_node: Registers a named node and its corresponding function in the graph.
 builder.add_node("screen_resume", screen_resume_node)
 
-# set_entry_point: Designates which node receives execution first when the graph starts.
-builder.set_entry_point("screen_resume")
+# Entry point: Use START edge if available (modern LangGraph), fall back to set_entry_point.
+if _has_start_const:
+    builder.add_edge(START, "screen_resume")
+else:
+    builder.set_entry_point("screen_resume")
 
 # add_edge: Specifies navigation flow. Here, screen_resume leads directly to END.
 builder.add_edge("screen_resume", END)

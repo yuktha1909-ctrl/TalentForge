@@ -11,10 +11,10 @@ python-jose[cryptography]>=3.3.0
 passlib[bcrypt]>=1.7.4
 bcrypt==4.0.1
 python-multipart>=0.0.9
-langgraph>=0.0.26
-langchain>=0.1.6
-langchain-openai>=0.0.5
-langchain-core>=0.2.0
+langgraph>=0.0.26,<2.0.0
+langchain>=0.1.6,<1.0.0
+langchain-openai>=0.0.5,<2.0.0
+langchain-core>=0.2.0,<2.0.0
 python-dotenv>=1.0.1
 pytest>=8.0.0
 httpx>=0.26.0
