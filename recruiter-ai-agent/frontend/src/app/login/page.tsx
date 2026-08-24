@@ -45,13 +45,15 @@ export default function LoginPage() {
   const onFinish = async (values: { email: string; password?: string; role: UserRole }) => {
     setLoading(true);
     try {
-      await login(values.email, values.password, values.role || selectedRole);
+      await login(values.email, values.password || '', values.role || selectedRole);
+    } catch (error) {
+      console.error('Login failed:', error);
     } finally {
       setLoading(false);
     }
   };
 
-  const handleQuickLogin = (role: UserRole) => {
+  const handleQuickLogin = async (role: UserRole) => {
     const demo = DEMO_PROFILES[role];
     handleRoleChange(role);
     form.setFieldsValue({
@@ -59,7 +61,14 @@ export default function LoginPage() {
       password: 'demo-password-123',
       role: role,
     });
-    login(demo.email, 'demo-password-123', role);
+    setLoading(true);
+    try {
+      await login(demo.email, 'demo-password-123', role);
+    } catch (error) {
+      console.error('Quick login failed:', error);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -67,8 +76,8 @@ export default function LoginPage() {
       {/* Left Column: AI Recruitment Showcase */}
       <div className="hidden lg:flex flex-col justify-between w-1/2 p-12 relative bg-gradient-to-br from-slate-950 via-indigo-950 to-slate-900 border-r border-indigo-900/30">
         {/* Glow Spheres */}
-        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none"></div>
-        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl pointer-events-none"></div>
+        <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-indigo-500/15 rounded-full blur-3xl pointer-events-none" />
+        <div className="absolute bottom-1/4 right-1/4 w-80 h-80 bg-purple-500/15 rounded-full blur-3xl pointer-events-none" />
 
         {/* Top Branding */}
         <div className="relative z-10">
@@ -121,8 +130,8 @@ export default function LoginPage() {
         <div className="relative z-10 flex items-center justify-between text-xs text-slate-400 pt-6 border-t border-slate-800/80">
           <div className="flex items-center gap-2">
             <span className="relative flex h-2 w-2">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75"></span>
-              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500"></span>
+              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
+              <span className="relative inline-flex rounded-full h-2 w-2 bg-emerald-500" />
             </span>
             <span className="text-slate-300 font-medium">All AI Inference Engines Online</span>
           </div>
@@ -231,22 +240,15 @@ export default function LoginPage() {
               <Select
                 size="large"
                 onChange={handleRoleChange}
-                className="w-full text-slate-900"
-                styles={{
-                  popup: {
-                    root: {
-                      backgroundColor: '#1E293B',
-                      color: '#fff',
-                    },
-                  },
-                }}
+                className="w-full"
+                dropdownStyle={{ backgroundColor: '#1E293B', color: '#fff' }}
               >
                 <Option value="recruiter">
                   <div className="flex items-center gap-2 py-1">
                     <UsergroupAddOutlined className="text-indigo-400" />
                     <div>
-                      <span className="font-semibold text-slate-900">Recruiter</span>
-                      <span className="text-slate-500 text-xs ml-2">— Pipeline, Sourcing & AI Screening</span>
+                      <span className="font-semibold text-slate-200">Recruiter</span>
+                      <span className="text-slate-400 text-xs ml-2">— Pipeline, Sourcing & AI Screening</span>
                     </div>
                   </div>
                 </Option>
@@ -254,8 +256,8 @@ export default function LoginPage() {
                   <div className="flex items-center gap-2 py-1">
                     <TeamOutlined className="text-purple-400" />
                     <div>
-                      <span className="font-semibold text-slate-900">Hiring Manager</span>
-                      <span className="text-slate-500 text-xs ml-2">— Shortlists, Debriefs & Scorecards</span>
+                      <span className="font-semibold text-slate-200">Hiring Manager</span>
+                      <span className="text-slate-400 text-xs ml-2">— Shortlists, Debriefs & Scorecards</span>
                     </div>
                   </div>
                 </Option>
@@ -263,8 +265,8 @@ export default function LoginPage() {
                   <div className="flex items-center gap-2 py-1">
                     <SafetyCertificateOutlined className="text-cyan-400" />
                     <div>
-                      <span className="font-semibold text-slate-900">Admin</span>
-                      <span className="text-slate-500 text-xs ml-2">— LLM Models, Users & Security Audit</span>
+                      <span className="font-semibold text-slate-200">Admin</span>
+                      <span className="text-slate-400 text-xs ml-2">— LLM Models, Users & Security Audit</span>
                     </div>
                   </div>
                 </Option>
@@ -294,7 +296,7 @@ export default function LoginPage() {
               label={
                 <div className="flex items-center justify-between w-full">
                   <span className="text-slate-300 text-xs font-semibold">Password</span>
-                  <a className="text-xs text-indigo-400 hover:text-indigo-300">Forgot password?</a>
+                  <a className="text-xs text-indigo-400 hover:text-indigo-300" href="#forgot">Forgot password?</a>
                 </div>
               }
               rules={[{ required: true, message: 'Please enter your password' }]}
