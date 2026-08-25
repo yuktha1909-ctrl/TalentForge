@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiLogin } from '@/lib/api';
 
@@ -95,19 +95,33 @@ function safeRemoveItem(key: string): void {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  const [user, setUser] = useState<UserProfile | null>(() => {
+  const [user, setUser] = useState<UserProfile | null>(null);
+  const [token, setToken] = useState<string | null>(null);
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
+
+  // Rehydrate state on mount to prevent SSR hydration mismatches
+  useEffect(() => {
     const storedAuth = safeGetItem(STORAGE_KEYS.AUTH);
     const storedRole = safeGetItem(STORAGE_KEYS.ROLE) as UserRole | null;
-    if (storedAuth === 'true' && storedRole && DEMO_PROFILES[storedRole]) {
-      return DEMO_PROFILES[storedRole];
-    }
-    return null;
-  });
+    const storedToken = safeGetItem(STORAGE_KEYS.TOKEN);
+    const storedDemo = safeGetItem(STORAGE_KEYS.DEMO) === 'true';
 
-  const [token, setToken] = useState<string | null>(() => safeGetItem(STORAGE_KEYS.TOKEN));
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(
-    () => safeGetItem(STORAGE_KEYS.DEMO) === 'true'
-  );
+    if (storedAuth) {
+      try {
+        // Attempt parsing JSON user profile first
+        const parsedUser = JSON.parse(storedAuth);
+        setUser(parsedUser);
+      } catch {
+        // Fallback for legacy demo flags or simple role lookup
+        if (storedRole && DEMO_PROFILES[storedRole]) {
+          setUser(DEMO_PROFILES[storedRole]);
+        }
+      }
+    }
+
+    setToken(storedToken);
+    setIsDemoMode(storedDemo);
+  }, []);
 
   const login = async (
     email?: string,
@@ -133,7 +147,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         setToken(authData.access_token);
         setIsDemoMode(false);
 
-        safeSetItem(STORAGE_KEYS.AUTH, 'true');
+        safeSetItem(STORAGE_KEYS.AUTH, JSON.stringify(profile));
         safeSetItem(STORAGE_KEYS.ROLE, backendRole);
         safeSetItem(STORAGE_KEYS.TOKEN, authData.access_token);
         safeSetItem(STORAGE_KEYS.DEMO, 'false');
@@ -171,7 +185,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setToken(null);
     setIsDemoMode(true);
 
-    safeSetItem(STORAGE_KEYS.AUTH, 'true');
+    safeSetItem(STORAGE_KEYS.AUTH, JSON.stringify(profile));
     safeSetItem(STORAGE_KEYS.ROLE, selectedRole);
     safeRemoveItem(STORAGE_KEYS.TOKEN);
     safeSetItem(STORAGE_KEYS.DEMO, 'true');
@@ -184,20 +198,25 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     setUser(null);
     setToken(null);
     setIsDemoMode(false);
-    safeSetItem(STORAGE_KEYS.AUTH, 'false');
+
+    safeRemoveItem(STORAGE_KEYS.AUTH);
     safeRemoveItem(STORAGE_KEYS.ROLE);
     safeRemoveItem(STORAGE_KEYS.TOKEN);
     safeRemoveItem(STORAGE_KEYS.DEMO);
+
     router.push('/login');
   };
 
   const switchRole = (newRole: UserRole) => {
     if (DEMO_PROFILES[newRole]) {
-      setUser(DEMO_PROFILES[newRole]);
+      const profile = DEMO_PROFILES[newRole];
+      setUser(profile);
       setIsDemoMode(true);
-      safeSetItem(STORAGE_KEYS.AUTH, 'true');
+
+      safeSetItem(STORAGE_KEYS.AUTH, JSON.stringify(profile));
       safeSetItem(STORAGE_KEYS.ROLE, newRole);
       safeSetItem(STORAGE_KEYS.DEMO, 'true');
+
       router.push(`/dashboard/${newRole}`);
     }
   };
