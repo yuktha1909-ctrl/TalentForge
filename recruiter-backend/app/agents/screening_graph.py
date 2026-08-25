@@ -32,16 +32,26 @@ class ScreeningState(TypedDict):
 # A Node in LangGraph is a standard Python function that receives the current State,
 # performs computation/LLM calls, and returns a dictionary containing state updates.
 def screen_resume_node(state: ScreeningState) -> dict:
-    """Evaluates candidate resume against job description using ChatOpenAI."""
+    """Evaluates candidate resume against job description using Groq or OpenAI."""
     resume_text = state["resume_text"]
     job_desc = state["job_description"]
 
-    # Instantiate LLM model
-    llm = ChatOpenAI(
-        model=settings.OPENAI_MODEL if settings.OPENAI_MODEL else "gpt-4o-mini",
-        openai_api_key=settings.OPENAI_API_KEY if settings.OPENAI_API_KEY else "dummy-key",
-        temperature=0
-    )
+    # Instantiate LLM model (Groq priority if key provided, else OpenAI)
+    if settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip():
+        llm = ChatOpenAI(
+            base_url="https://api.groq.com/openai/v1",
+            api_key=settings.GROQ_API_KEY,
+            model=settings.GROQ_MODEL if settings.GROQ_MODEL else "llama-3.3-70b-versatile",
+            temperature=0
+        )
+    elif settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
+        llm = ChatOpenAI(
+            api_key=settings.OPENAI_API_KEY,
+            model=settings.OPENAI_MODEL if settings.OPENAI_MODEL else "gpt-4o-mini",
+            temperature=0
+        )
+    else:
+        llm = None
 
     system_prompt = (
         "You are an expert technical recruiter evaluating candidate resumes.\n"
@@ -51,6 +61,8 @@ def screen_resume_node(state: ScreeningState) -> dict:
     user_prompt = f"### Job Description:\n{job_desc}\n\n### Candidate Resume:\n{resume_text}"
 
     try:
+        if llm is None:
+            raise ValueError("No LLM API key provided (set GROQ_API_KEY or OPENAI_API_KEY)")
         messages = [
             SystemMessage(content=system_prompt),
             HumanMessage(content=user_prompt)
@@ -58,7 +70,7 @@ def screen_resume_node(state: ScreeningState) -> dict:
         response = llm.invoke(messages)
         output_text = response.content
     except Exception as e:
-        logger.warning(f"OpenAI API call unconfigured or unreachable ({e}). Returning fallback verdict.")
+        logger.warning(f"LLM API call unconfigured or unreachable ({e}). Returning fallback verdict.")
         output_text = (
             "Verdict: Strong Fit\n"
             "Reasons:\n"

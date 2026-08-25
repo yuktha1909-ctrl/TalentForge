@@ -9,17 +9,28 @@ logger = logging.getLogger(__name__)
 
 
 def _get_llm():
-    """Helper to initialize ChatOpenAI if API key is present."""
-    if settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
+    """Helper to initialize ChatOpenAI (supports Groq and OpenAI) if API key is present."""
+    if settings.GROQ_API_KEY and settings.GROQ_API_KEY.strip():
         try:
             from langchain_openai import ChatOpenAI
             return ChatOpenAI(
-                model=settings.OPENAI_MODEL,
+                base_url="https://api.groq.com/openai/v1",
+                api_key=settings.GROQ_API_KEY,
+                model=settings.GROQ_MODEL if settings.GROQ_MODEL else "llama-3.3-70b-versatile",
+                temperature=0.2
+            )
+        except Exception as e:
+            logger.warning(f"Failed to initialize Groq LLM: {e}")
+    elif settings.OPENAI_API_KEY and settings.OPENAI_API_KEY.strip():
+        try:
+            from langchain_openai import ChatOpenAI
+            return ChatOpenAI(
+                model=settings.OPENAI_MODEL if settings.OPENAI_MODEL else "gpt-4o-mini",
                 openai_api_key=settings.OPENAI_API_KEY,
                 temperature=0.2
             )
         except Exception as e:
-            logger.warning(f"Failed to initialize ChatOpenAI: {e}")
+            logger.warning(f"Failed to initialize OpenAI LLM: {e}")
     return None
 
 
