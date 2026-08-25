@@ -1,6 +1,6 @@
 'use client';
 
-import React, { createContext, useContext, useState, useEffect } from 'react';
+import React, { createContext, useContext, useState } from 'react';
 import { useRouter } from 'next/navigation';
 import { apiLogin } from '@/lib/api';
 
@@ -95,33 +95,27 @@ function safeRemoveItem(key: string): void {
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const router = useRouter();
 
-  const [user, setUser] = useState<UserProfile | null>(null);
-  const [token, setToken] = useState<string | null>(null);
-  const [isDemoMode, setIsDemoMode] = useState<boolean>(false);
-
-  // Rehydrate state on mount to prevent SSR hydration mismatches
-  useEffect(() => {
+  // Lazy state initializers execute synchronously on mount without needing useEffect
+  const [user, setUser] = useState<UserProfile | null>(() => {
     const storedAuth = safeGetItem(STORAGE_KEYS.AUTH);
     const storedRole = safeGetItem(STORAGE_KEYS.ROLE) as UserRole | null;
-    const storedToken = safeGetItem(STORAGE_KEYS.TOKEN);
-    const storedDemo = safeGetItem(STORAGE_KEYS.DEMO) === 'true';
 
     if (storedAuth) {
       try {
-        // Attempt parsing JSON user profile first
-        const parsedUser = JSON.parse(storedAuth);
-        setUser(parsedUser);
+        return JSON.parse(storedAuth);
       } catch {
-        // Fallback for legacy demo flags or simple role lookup
         if (storedRole && DEMO_PROFILES[storedRole]) {
-          setUser(DEMO_PROFILES[storedRole]);
+          return DEMO_PROFILES[storedRole];
         }
       }
     }
+    return null;
+  });
 
-    setToken(storedToken);
-    setIsDemoMode(storedDemo);
-  }, []);
+  const [token, setToken] = useState<string | null>(() => safeGetItem(STORAGE_KEYS.TOKEN));
+  const [isDemoMode, setIsDemoMode] = useState<boolean>(
+    () => safeGetItem(STORAGE_KEYS.DEMO) === 'true'
+  );
 
   const login = async (
     email?: string,
